@@ -1,0 +1,68 @@
+---
+title: "Class 12 Lab"
+author: "Derek Chang (PID: A16942232)"
+format: pdf
+---
+
+## Population Scale:
+One sample is obviously not enough to know what is happening in a population. You are
+interested in assessing genetic differences on a population scale. So, you processed about
+~230 samples and did the normalization on a genome level. Now, you want to find whether
+there is any association of the 4 asthma-associated SNPs (rs8067378…) on ORMDL3
+expression.
+
+How many samples do we have: 
+
+Reading the Table: 
+```{r}
+expr <- read.table("DataClass12.txt")
+head(expr)
+
+```
+
+```{r}
+summary(expr)
+```
+
+Reading the Sample size for each genotype:
+
+```{r}
+table(expr$geno)
+```
+
+
+# Making a boxplot from expr data
+```{r}
+library(ggplot2)
+```
+
+Making the boxplot using `ggplot`:
+
+```{r}
+exprplot <- ggplot(expr, aes(geno, exp, fill = geno)) + geom_boxplot()
+exprplot
+```
+
+
+>Q13: Read this file into R and determine the sample size for each genotype and their
+corresponding median expression levels for each of these genotypes
+
+```{r}
+library(dplyr)
+medians <- expr %>% group_by(geno) %>% summarize(median_value = median(exp))
+medians
+```
+
+
+Given the table function for each genotype, We have 108 A/A,  233 A/G, and 121 G/G genotypes. The median for A/A is 31.24847, the median for A/G is 25.06486, and the median for G/G is 20.07363.
+
+
+
+>Q14: Generate a boxplot with a box per genotype, what could you infer from the relative expression value between A/A and G/G displayed in this plot? Does the SNP effect the expression of ORMDL3?
+
+Based on the boxplot, we can infer that A/A has a much higher relative expression value compared to G/G. Given this, it seems that the SNP does affect the expression levels of ORMDL3.
+
+
+
+
+

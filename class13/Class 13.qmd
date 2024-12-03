@@ -1,0 +1,321 @@
+---
+title: "Class 13"
+author: "Derek Chang (PID: A16942232)"
+format: pdf
+---
+
+```{r}
+library(BiocManager)
+library(DESeq2)
+```
+Today we will analyze some RNASeq data from Himes et al. on the effects of dexamethasome (dex), a synthetic glucocorticoid steroid on airway smooth muscle cells (ASM).
+
+# 3. Importing countData and colData 
+
+```{r}
+counts <- read.csv("airway_scaledcounts.csv", row.names = 1)
+metadata <- read.csv("airway_metadata.csv")
+```
+
+```{r}
+head(counts)
+head(metadata)
+```
+
+>Q1. How many genes are in this dataset? 
+
+```{r}
+nrow(counts)
+```
+There are 38694 genes in the dataset.
+
+>Q2. How many ‘control’ cell lines do we have? 
+
+```{r}
+table(metadata$dex)
+```
+
+We have 4 'control' cell lines.
+
+## Toy differential expression analysis
+
+Calculate the mean per gene count values for all "control" samples (`count` columns) and do the same for the "treated" samples. We will compare the mean per gene counts against each other. 
+
+1. Find all control values/columns in `count`
+
+```{r}
+control <- metadata[metadata[,"dex"]=="control",]
+```
+
+2. Find the mean per gene for all "control" columns
+
+>Q3. How would you make the above code in either approach more robust? Is there a function that could help here?
+
+```{r}
+#control.mean <- rowSums(control.counts)/4
+```
+
+I will use the rowSums function to make the approach more robust even if more samples will be added.
+
+```{r}
+control.counts <- counts[ ,control$id]
+control.mean <- rowSums( control.counts )/4 
+head(control.mean)
+```
+
+3. Do the same steps to find the `treated.mean` values
+
+>Q4.Follow the same procedure for the treated samples (i.e. calculate the mean per gene across drug treated samples and assign to a labeled vector called treated.mean)
+
+```{r}
+treated <- metadata[metadata[,"dex"]=="treated",]
+treated.counts <- counts[ ,treated$id]
+treated.mean <- rowSums( treated.counts )/4 
+head(treated.mean)
+```
+
+```{r}
+meancounts <- data.frame(control.mean,treated.mean)
+```
+
+
+>Q5 (a). Create a scatter plot showing the mean of the treated samples against the mean of the control samples. Your plot should look something like the following.
+
+```{r}
+plot(meancounts)
+```
+
+>Q5 (b).You could also use the ggplot2 package to make this figure producing the plot below. What geom_?() function would you use for this plot? 
+
+```{r}
+library(ggplot2)
+ggplot(meancounts, aes(control.mean, treated.mean)) + geom_point()
+```
+
+I used `geom_point`for this graph.
+
+>Q6. Try plotting both axes on a log scale. What is the argument to plot() that allows you to do this?
+
+```{r}
+plot(meancounts, log = "xy")
+```
+
+We most frequently use log2 transformation for this type of data.
+
+```{r}
+log2(10/10)
+log2(10/20)
+log2(20/10)
+```
+
+These log2 values make the interpretation of "fold change" much easier, a rule of thumb in the field is a log2 fold of +2 or -2 is where we start to pay attention. 
+
+Let's calculate the log2 fold-change and add to our `meancounts` data.frame.
+
+```{r}
+meancounts$log2fc <-log2(meancounts$treated.mean/meancounts$control.mean)
+
+head(meancounts)
+```
+
+>Q7. What is the purpose of the arr.ind argument in the which() function call above? Why would we then take the first column of the output and need to call the unique() function?
+
+The purpose is to find which row or columns have zero counts for genes and samples. We will use `Unique` so that we don't count any row twice.
+
+```{r}
+to.rm <- rowSums(meancounts[,1:2]==0) > 0
+mycounts <- meancounts[!to.rm,]
+```
+
+> Q. How many genes do i have left after the count filtering
+
+```{r}
+nrow(mycounts)
+```
+
+> Q8. How many genes are "up" regulated due to drug treatement with a threshold of +2 log2-fold-changes?
+
+1. I need to extract the log2fc values
+2. I need to find those that are above +2
+3. I need to count them
+
+```{r}
+table(mycounts$log2fc > 2)
+```
+There are 250 genes
+
+>Q9. How many genes are "down" regulate due to drug treatement with a threshold of -2 log2-fold-changes?
+
+```{r}
+table(mycounts$log2fc < -2)
+```
+There are 367 genes.
+
+>Q10. Do you trust these results? Why or why not?
+the significance 
+
+No I don't trust these results as I don't know the significance of the results.
+
+We are missing the stats here. Are the difference in the mean counts significant?
+
+Let's do this analysis the right way and use the **DESeq2** package
+
+##DESeq analysis
+
+```{r}
+#| message: false
+library(DESeq2)
+```
+
+The first function that we will use will setup the data in the way (format) DESeq wants it.
+
+```{r}
+dds <- DESeqDataSetFromMatrix(countData = counts,
+                       colData = metadata,
+                       design = ~dex)
+```
+
+The function in the package is called `DEseq()` and we can run it on our new `dds` object. `dds` has empty columns for the results of DESeq.
+
+```{r}
+dds <- DESeq(dds)
+```
+
+I will get the results from dds with the `results()` function: 
+
+```{r}
+res <- results(dds)
+head(res)
+```
+
+Make a common overall results figure from this analysis called a volcano plot. This is designed to keep our inner biologist and stats happy, as it has the fold change and statistics. P-value vs Plot-fold-change. padj is a p value that has been adjusted
+
+```{r}
+plot(res$log2FoldChange, -log(res$padj))
+abline(v = c(-2,+2), col = "gray")
+abline(h = -log(0.005), col = "gray")
+```
+Add some color to the plot:
+```{r}
+mycols <- rep("gray", nrow(res))
+mycols[res$log2FoldChange > 2] <- "red"
+mycols[res$log2FoldChange < -2] <- "red"
+mycols[-log(res$padj) < -log(0.005)] <- "gray"
+
+
+plot(res$log2FoldChange, -log(res$padj), col = mycols)
+abline(v = c(-2,+2), col = "gray")
+abline(h = -log(0.005), col = "gray")
+
+```
+
+I want to save my results to date out to disc
+
+```{r}
+write.csv(res, file = "myresults.csv" )
+```
+
+What are these genes of interest
+
+
+## Gene Annotation
+
+I need to translate our gene identifiers "ENSG" into gene names that the rest of the world can understand. 
+
+To do this "annotation" I can use the *"AnnotationDbi"* package using `BiocManager::install("AnnotationDbi")`.
+
+```{r}
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+
+columns(org.Hs.eg.db)
+```
+
+I will use the `mapIds()` function to "map" identifiers to those from different databases. I will go between "ENSEMBL" and "SYMBOL" (and then after "GENENAME")
+
+
+```{r}
+res$symbol <- mapIds(org.Hs.eg.db, 
+       keys = rownames(res),
+        keytype = "ENSEMBL",
+        column = "SYMBOL")
+```
+
+
+ADD "GENENAME"
+```{r}
+res$genename <- mapIds(org.Hs.eg.db, 
+       keys = rownames(res),
+        keytype = "ENSEMBL",
+        column = "GENENAME")
+```
+
+ADD "ENTREZ"
+
+```{r}
+res$entrez <- mapIds(org.Hs.eg.db, 
+       keys = rownames(res),
+        keytype = "ENSEMBL",
+        column = "ENTREZID")
+```
+
+```{r}
+head(res)
+```
+
+Save our annotated results object.
+
+```{r}
+write.csv(res, file = "results_annotated.csv")
+```
+
+## Pathway Analysis
+
+Now that we have our results with added annotations we can do some pathway mapping.
+
+Let's use the **gage** package to look for KEGG pathways in our results "Genes of Interest" I will also use the **pathview** package to draw little pathway figures.
+
+```{r}
+#| message: false
+library(pathview)
+library(gage)
+library(gageData)
+data(kegg.sets.hs)
+
+head(kegg.sets.hs,1)
+```
+
+what **gage** wants as input is not the whole table/data.frame of results. It just wants a "vector of importance". For RNASeq data like this we have our log2FC values.
+
+```{r}
+foldchanges <- res$log2FoldChange
+names(foldchanges) = res$entrez
+head(foldchanges)
+```
+
+Now, let's run the gage pathway analysis
+
+```{r}
+# Get the results
+keggres = gage(foldchanges, gsets = kegg.sets.hs)
+```
+
+What is in this `keggres` object?
+
+```{r}
+attributes(keggres)
+```
+
+```{r}
+head(keggres$less, 3)
+```
+
+Let's use the pathview package to look at one of the highlighted KEGG pathways with our genes highlighted."hsa05310 Asthma".
+
+```{r}
+pathview(gene.data=foldchanges, pathway.id="hsa05310")
+```
+
+![Asthma pathway with my DEGs](hsa05310.pathview.png)
+
+
