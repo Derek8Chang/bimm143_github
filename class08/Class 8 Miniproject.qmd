@@ -1,0 +1,262 @@
+---
+title: "Class 8 mini project"
+author: "Derek Chang (PID:A16942232)"
+format: pdf
+---
+
+  It is important to consider scaling your data before analysis such as PCA. 
+  
+  For example:
+  
+```{r}
+head(mtcars)
+```
+  
+  
+```{r}
+colMeans(mtcars)
+```
+  
+```{r}
+apply(mtcars, 2, sd)
+```
+  
+```{r}
+x <- scale(mtcars)
+head
+```
+  
+```{r}
+round(colMeans(x),2)
+```
+  
+```{r}
+round(apply(x,2, sd),2)
+```
+  
+  prcomp(x, scale = F)
+  
+```{r}
+head(read.csv("WisconsinCancer.csv"))
+
+fna.data <- "WisconsinCancer.csv"
+
+wisc.df <- read.csv(fna.data, row.names = 1)
+
+head(wisc.df)
+```
+  
+  We are using `wisc.df[-1]` to remove the first column, which is the expert answer that we will compare our results to.
+  
+```{r}
+# using -1 to remove the diagnosis section of the `wisc.df`
+wisc.data <- wisc.df[,-1]
+diagnosis <- wisc.df$diagnosis
+```
+  
+>Q1. How many observations are in this dataset? 
+
+```{r}
+nrow(wisc.data)
+```
+
+There are 569 total observations in this dataset.
+
+>Q2. How many of the observations have a malignant diagonsis?
+
+```{r}
+table(diagnosis)
+```
+
+There are 212 malignant diagnosis observations.
+
+>Q3. How many variables/features in the data are suffixed with _mean? 
+
+```{r}
+a <- grep("_mean", names(wisc.data), value = TRUE)
+sum(table(a))
+```
+
+There are 10 variables that are suffixed with _mean. 
+
+## Performing PCA 
+
+```{r}
+colMeans(wisc.data)
+apply(wisc.data, 2, sd)
+```
+This should be scaled, given the difference in scales of numbers 
+
+```{r}
+wisc.pr <- prcomp(wisc.data, scale. = TRUE)
+summary(wisc.pr)
+```
+See what is in our PCA result object
+
+```{r}
+attributes(wisc.pr)
+head(wisc.pr$x)
+```
+
+```{r}
+
+```
+
+
+```{r}
+plot(wisc.pr$x[,1], wisc.pr$x[,2], col = as.factor(diagnosis))
+#plot(wisc.pr$x)
+```
+
+
+>Q4. From your results, what proportion of the original variance is captured by the first principal compomnents (PC1)
+
+There are 0.4427 is captured by the first PC1.
+
+>Q5. How many principal components (PCs) are required to describe at least 70% of the original variance in the data?
+
+3 PCs are required to describe at least 70% of the original variance, as PC3 is the first cumulative variance past .7. 
+
+>Q6. How many principal components (PCs) are required to describe at least 90% of the original variance in the data?
+
+7 PCs are required to describe at least 90% of the original variance in the data. 
+
+>Q7. What stands out to you about this plot? Is it easy or difficult to understand? Why?
+
+```{r}
+biplot(wisc.pr)
+```
+This plot is not easy to understand, there are way too many points and numbers on the graph. 
+
+>Q8.Generate a similar plot for principal components 1 and 3. What do you notice about these plots?
+
+```{r}
+# Repeat for components 1 and 3
+plot(wisc.pr$x[,1], wisc.pr$x[,3], col = as.factor(diagnosis), xlab = "PC1", ylab = "PC3")
+```
+I notice that the first graph with PC1 and 2 are more clear in respects to data points, as there are a lot less overlaps overall. Overall, PC1 has a lot more variation compared to the other PCs, allowing for better separation.
+
+```{r}
+# Create a data.frame for ggplot
+df <- as.data.frame(wisc.pr$x)
+df$diagnosis <- diagnosis
+
+# Load the ggplot2 package
+library(ggplot2)
+
+# Make a scatter plot colored by diagnosis
+ggplot(df) + 
+  aes(PC1, PC2, col=diagnosis) + 
+  geom_point()
+```
+
+# Variance
+
+```{r}
+# Calculate variance of each component
+pr.var <- wisc.pr$sdev^2
+head(pr.var)
+
+```
+
+```{r}
+# Variance explained by each principal component: pve
+pve <- pr.var / sum(pr.var)
+# Plot variance explained for each principal component
+plot(pve, xlab = "Principal Component", 
+     ylab = "Proportion of Variance Explained", 
+     ylim = c(0, 1), type = "o")
+```
+
+>Q9. For the first principal component, what is the component of the loading vector (i.e. wisc.pr$rotation[,1]) for the feature concave.points_mean?
+
+```{r}
+ b <- wisc.pr$rotation[,1]["concave.points_mean"]
+b
+```
+
+For PC1, concave.points_mean contributes -0.26 to the position. 
+
+>Q10. What is the minimum number of principal components required to explain 80% of the variance of the data?
+
+The minimum number of PCs required to explain 80% is 5 PCs. 
+
+## 3. Hierarchical Clustering
+
+```{r}
+data.scaled <- scale(wisc.data)
+```
+
+```{r}
+data.dist <-dist(data.scaled, method = "euclidean")
+wisc.hclust <- hclust(data.dist)
+```
+
+>Q11. Using the plot() and abline() functions, what is the height at which the clustering model has 4 clusters?
+
+```{r}
+plot(wisc.hclust)
+abline(h = 19, col = "red", lty = 2)
+```
+
+The height where the clustering model has 4 clusters seems to be 19.
+
+#selecting clusters
+```{r}
+wisc.hclust.clusters <- cutree(wisc.hclust, k = 4)
+table(wisc.hclust.clusters, diagnosis)
+```
+
+```{r}
+wisc.hclust.clusters <- cutree(wisc.hclust, k = 2)
+table(wisc.hclust.clusters, diagnosis)
+```
+
+>Q12. Can you find a better cluster vs diagnoses match by cutting into a different number of clusters between 2 and 10?
+
+The cluster numbers 7 and 4 seem to be the best for having good diagnoses matches as these help minimize the cluster diagnoses while keeping the malignant and benign corespondence with values 1 and 2 respectively. 
+
+## Combine PCA and clustering
+
+Our PCA results were in `wisc.pr$x`
+
+```{r}
+#Distance matrix from PCA result
+d <- dist(wisc.pr$x[,1:3])
+hc <- hclust(d, method = "ward.D2")
+plot(hc)
+```
+```{r}
+#Distance matrix from PCA result
+d <- dist(wisc.pr$x[,1:3])
+hc <- hclust(d, method = "complete")
+plot(hc)
+```
+
+Cut tree into two groups/branches/clusters
+```{r}
+grps <- cutree(hc, k=2)
+```
+
+```{r}
+plot(wisc.pr$x, col = grps)
+```
+
+
+>Q13. Which method gives your favorite results for the same data.dist dataset? Explain your reasoning.
+
+I like the `"ward.D2"` method as it creates the most clear hclusts compared to the other methods. Because ward.d2 merges the clusters to lower variance, it is much easier to look at and diffrentiate different clusters within the dataset.
+
+Compare my clustering results (my `grps`) to the expert diagnosis
+
+```{r}
+table(diagnosis)
+table(grps)
+```
+
+
+```{r}
+table(diagnosis, grps)
+```
+
+
