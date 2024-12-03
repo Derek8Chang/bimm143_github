@@ -7,3 +7,7 @@ Classwork for [BIMM143 F24](https://bioboot.github.io/bimm143_F24/) at UC San Di
 - Class 8 [PCA Mini-Project for cancer cell analysis](https://github.com/Derek8Chang/bimm143_github/blob/main/class08/Class-8-Miniproject.pdf)
 - Class 9 [Structural Bioinformatics pt1](https://github.com/Derek8Chang/bimm143_github/blob/main/class09/Class-9-.pdf)
 - Class 10 [Halloween Mini-Project](https://github.com/Derek8Chang/bimm143_github/blob/main/class10/Class-10-.pdf)
+- Class 11 [Structural Bioinformatics pt2 with Alphafold](https://github.com/Derek8Chang/bimm143_github/blob/main/class09/Class-9-.pdf)
+- Class 12 [RNA-Seq Analysis](https://github.com/Derek8Chang/bimm143_github/blob/main/Class12/Class12.pdf)
+- Class 13 [Transcriptomics and RNA-Seq analysis](https://github.com/Derek8Chang/bimm143_github/blob/main/class13/Class-13.pdf)
+- Class 14 [RNASeq analysis from Pathways](https://github.com/Derek8Chang/bimm143_github/blob/main/Class14/Class14.pdf)
