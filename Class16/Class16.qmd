@@ -1,0 +1,20 @@
+---
+title: "Class 16"
+format: html
+---
+
+```{r}
+library(readr)
+file_path <- "mm-second.x.zebrafish.tsv"  # Adjust the path if needed
+zebrafish_data <- read_tsv(file_path)
+```
+
+```{r}
+read.table("myresult.tsv", sep)
+```
+
+```{r}
+library(bio3d)
+file_path <- "mm-second"
+```
+

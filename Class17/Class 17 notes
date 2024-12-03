@@ -1,0 +1,25 @@
+My notes for class 17
+
+ssh: open a secure shell on another computer
+# ssh [-i keyfile] username@computername
+ssh -i "~/Desktop/BIMM143/bimm143_d8chang.pem" ubuntu@ec2-34-219-10-246.us-west-2.compute.amazonaws.com
+scp: secure copy from or to a remote machine\
+#scp -i keyfile username@remotecomputer:FILE2COPY NEWFILE
+
+The PATH is a special environment variable that stores the location of exe files 
+in UNIX systems. i can print it iwth `echo $PATH`
+
+We can add to it with export PATH=$PATH:/my/new/path
+
+SRA-TOLKIT allows us to query and download raw sequencing data from ncbi's SRA
+database. Key commands include prefetch [SRACODE]
+fastq
+
+gunzip: unzip (gets rid of .gz)
+tar -xvf: to untar files (gets rid of .tar)
+pwd: working directory
+Add new programs to $PATH 
+
+homework (extra credit) = do the PCA analysis 
+
+scp -i "~/Desktop/BIMM143/bimm143_d8chang.pem" ubuntu@ec2-34-219-10-246.us-west-2.compute.amazonaws.com:~/*_quant
