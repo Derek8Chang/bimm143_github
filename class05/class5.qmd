@@ -1,8 +1,7 @@
 ---
 title: "Class 5 Data Viz with ggplot"
 author: "Derek (PID: A16942232)"
-format: pdf
-editor: visual
+format: gfm
 ---
 
 ## Plotting in R
@@ -126,6 +125,10 @@ filter(gapminder, pop<4109086, year == 2007)
 
 ```
 
+```{r}
+library(dplyr)
+```
+
 
 ## Bar Plots (8)
 ```{r}
@@ -136,9 +139,8 @@ gapminder_top5 <- gapminder %>%
 
 gapminder_top5
 
-ggplot(gapminder_top5) + aes(country, pop, fill = continent) + geom_bar()
+ggplot(gapminder_top5) + aes(country, fill = continent) + geom_bar()
 
-geom_bar()
 ```
 
 
